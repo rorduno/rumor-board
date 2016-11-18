@@ -9,10 +9,9 @@
   "author": "raul orduno",
   "license": "ISC",
   "dependencies": {
-	"hapi": "^15.2.0",
-	"inert": "^4.0.2",
-	"moment": "^2.16.0",
-	"redis": "^2.6.3",
-	"socket.io": "^1.5.1"
+    "hapi": "^15.2.0",
+    "inert": "^4.0.2",
+    "redis": "^2.6.3",
+    "socket.io": "^1.5.1"
   }
 }

@@ -1,5 +1,4 @@
 var Hapi = require('hapi');
-var moment = require('moment');
 var server = new Hapi.Server();
 server.connection({ port: 8080 });
 
@@ -14,8 +13,6 @@ server.register(require('inert'), (err) => {
         throw err;
     }
 
-    // The server.route() command registers the /hello route, which tells your server
-    // to accept GET requests to /hello and reply with the contents of the hello.html file.
 	server.route([ {
             method: 'GET',
 	        path: '/',
@@ -47,16 +44,18 @@ server.register(require('inert'), (err) => {
 
 // set listener for 'connection'
 io.on('connection', function(socket){
-    console.log('a user connected');
+    console.log('a user connected') ;
 
     // loads persisted rumors back to client
     socket.on('io:load-rumors', function () {
         redisClient.lrange('rumors', 0, -1, function(err, data){
             console.log('data is ' + data.length);
             rumors = data.reverse(); // reverse messages
-            rumors.forEach(function(rumor){
-                rumor = JSON.parse(rumor); // deserialize
-                socket.emit('io:text', rumor.data);
+            rumors.forEach(function(rumor, index){
+                data = { rumor: rumor, index: index };
+                console.log('data is ' + rumor);
+                console.log('index is ' + index);
+                socket.emit('io:text', data);
             });
         });
 
@@ -65,12 +64,15 @@ io.on('connection', function(socket){
     // listener for text input from client
     socket.on('io:text', function (text) {
         console.log('io:text server side');
-
-        var now =  moment().toString();
         // persist data in database
-        storeRumor( now, text);
-        // emit back to client side
-        io.emit('io:text', text);
+        storeRumor(text);
+    });
+
+    // listener for deleting rumor
+    socket.on('io:delete-rumor', function (index) {
+        console.log('io:delete-rumor server side');
+        removeRumor(index);
+
     });
 
     socket.on('disconnect', function(){
@@ -79,12 +81,30 @@ io.on('connection', function(socket){
 
 });
 
-var storeRumor = function (timestamp, data) {
-    // create object and turn to string  to store in redis, serialize
-    var rumor = JSON.stringify( {timestamp: timestamp, data: data} );
-
+var storeRumor = function (data) {
+    var rumor = data;
     redisClient.lpush('rumors', rumor, function(err, response){
-        console.log('adding rumor to redis ' + rumor);
+        var index = response - 1;
+        console.log('adding rumor to redis ' + rumor + ' and index : ' + index);
+        var data = { rumor: rumor, index: index };
+        // emit back to client side
+        io.emit('io:text', data);
     });
 }
 
+var editRumor = function (index, newData) {
+    redisClient.lset('rumors', index, newData);
+
+    // update socket
+    io.emit('io:load-rumors');
+}
+
+var removeRumor = function (index) {
+    // use LSET to change the value of the element to 'DELETE', and the you call LREM on this value.
+    console.log('deleting...' + index);
+    redisClient.lset('rumors', index, 'DELETE');
+    redisClient.lrem('rumors', 1, 'DELETE');
+
+    // update socket
+    io.emit('io:load-rumors');
+}

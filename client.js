@@ -9,9 +9,16 @@ $( document ).ready(function() {
     // load rumors
     socket.emit('io:load-rumors');
 
+    // delete rumors
+    //socket.emit('io:delete-rumor', index);
+
+    // edit rumors
+    //socket.emit('io:edit-rumor' index);
+
     // listens for text i/o
     socket.on('io:text', function(data){
       console.log('connection in client side' + data);
+      // TODO: expose index
       renderMessage(data);
     });
 
@@ -38,9 +45,9 @@ $( document ).ready(function() {
    * renders messages to the DOM
    * nothing fancy
    */
-    function renderMessage(rumor) {
-        var html = "<li class='row'>";
-        html += "<blockquote class=''><p>" + rumor + "</p></blockquote>";
+    function renderMessage(data) {
+        var html = "<li class='row' id='" + data.index+ "'>";
+        html += "<blockquote class=''><p>" + data.rumor + "</p></blockquote>";
         html += "</li>";
         html += "<div class='text-right'><i class='fa fa-pencil-square-o fa-2x' aria-hidden='true'></i> <i class='fa fa-trash fa-2x' aria-hidden='true'></i></div>";
         $('#rumors').append(html);  // append to list
