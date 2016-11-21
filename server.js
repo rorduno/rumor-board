@@ -1,6 +1,6 @@
 var Hapi = require('hapi');
 var server = new Hapi.Server();
-server.connection({ port: 8080 });
+server.connection({ port: 3333 });
 
 var redis = require('redis');
 var redisClient = redis.createClient();
@@ -41,21 +41,22 @@ server.register(require('inert'), (err) => {
     })
 });
 
-
-// set listener for 'connection'
+// set listener for 'connection', all socket io is done here
 io.on('connection', function(socket){
     console.log('a user connected') ;
-
     // loads persisted rumors back to client
     socket.on('io:load-rumors', function () {
-        redisClient.lrange('rumors', 0, -1, function(err, data){
-            console.log('data is ' + data.length);
-            rumors = data.reverse(); // reverse messages
-            rumors.forEach(function(rumor, index){
-                data = { rumor: rumor, index: index };
-                console.log('data is ' + rumor);
-                console.log('index is ' + index);
-                socket.emit('io:text', data);
+        console.log('io:load-rumors');
+        // loop through 'rumors' and get ids
+        redisClient.smembers('rumors', function(err,data){
+            var rumorIds = data;
+            // then get each set by its id
+            rumorIds.forEach(function(rumorId){
+            // emit data to client
+                redisClient.get(rumorId, function(err, data){
+                    var dataToReturn = { rumor: data, index: rumorId };
+                    socket.emit('io:text', dataToReturn);
+                })
             });
         });
 
@@ -72,39 +73,49 @@ io.on('connection', function(socket){
     socket.on('io:delete-rumor', function (index) {
         console.log('io:delete-rumor server side');
         removeRumor(index);
+    });
 
+    // listener for editing rumor
+    socket.on('io:edit-rumor', function (newData) {
+        console.log('io:edit-rumor server side');
+        editRumor(newData);
     });
 
     socket.on('disconnect', function(){
         console.log('user disconnected');
     });
 
+    var storeRumor = function (data) {
+    redisClient.incr('id:rumors', function(err, response){
+        // INCR id:rumors
+        // SET rumors:{id} 'data'
+        // SADD rumors {id}
+
+        var key = 'rumors-' + response; // set key as rumor:1
+        var newData = { rumor: data, index: key };
+
+        redisClient.set(key, data);
+        redisClient.sadd('rumors', key);
+        socket.emit('io:text', newData); // emit back to client side
+        console.log('adding rumor to redis ' + data + ' and index : ' + key);
+    }); // increment counter
+
+    }
+
+    var editRumor = function (newData) {
+        console.log('editing newData...' + newData.index + newData.rumor);
+        redisClient.set(newData.index, newData.rumor);
+    }
+
+    var removeRumor = function (index) {
+       console.log('deleting...' + index);
+        // delete data from set
+        redisClient.del(index);
+        // delete id from 'rumors'
+        redisClient.srem('rumors', index);
+
+    }
+
 });
 
-var storeRumor = function (data) {
-    var rumor = data;
-    redisClient.lpush('rumors', rumor, function(err, response){
-        var index = response - 1;
-        console.log('adding rumor to redis ' + rumor + ' and index : ' + index);
-        var data = { rumor: rumor, index: index };
-        // emit back to client side
-        io.emit('io:text', data);
-    });
-}
-
-var editRumor = function (index, newData) {
-    redisClient.lset('rumors', index, newData);
-
-    // update socket
-    io.emit('io:load-rumors');
-}
-
-var removeRumor = function (index) {
-    // use LSET to change the value of the element to 'DELETE', and the you call LREM on this value.
-    console.log('deleting...' + index);
-    redisClient.lset('rumors', index, 'DELETE');
-    redisClient.lrem('rumors', 1, 'DELETE');
-
-    // update socket
-    io.emit('io:load-rumors');
-}
+// TODO : index out of range
