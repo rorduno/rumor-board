@@ -1,6 +1,7 @@
 var Hapi = require('hapi');
 var server = new Hapi.Server();
-server.connection({ port: 3333 });
+var port = process.env.PORT || 3000;
+server.connection({ port: port });
 
 var redis = require('redis');
 var redisClient = redis.createClient();
@@ -24,7 +25,7 @@ server.register(require('inert'), (err) => {
                 }
             }
     }, {
-        method: 'GET', 
+        method: 'GET',
         path: '/client.js',
         handler: { file: './client.js' },
         config: {
