@@ -24,7 +24,7 @@ server.register(require('inert'), (err) => {
                 }
             }
     }, {
-        method: 'GET', /
+        method: 'GET', 
         path: '/client.js',
         handler: { file: './client.js' },
         config: {
