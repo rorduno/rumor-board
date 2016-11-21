@@ -4,9 +4,18 @@ var port = process.env.PORT || 3000;
 server.connection({ port: port });
 
 var redis = require('redis');
-var redisClient = redis.createClient();
+var redisClient; //= redis.createClient();
 var io = require('socket.io')(server.listener);
 var rumors = [];
+
+if (process.env.REDISTOGO_URL) {
+    var rtg   = require("url").parse(process.env.REDISTOGO_URL);
+    redisClient = require("redis").createClient(rtg.port, rtg.hostname);
+
+    redisClient.auth(rtg.auth.split(":")[1]);
+} else {
+    var redis = require("redis").createClient();
+}
 
 server.register(require('inert'), (err) => {
 
