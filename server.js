@@ -24,7 +24,7 @@ server.register(require('inert'), (err) => {
                 }
             }
     }, {
-        method: 'GET', // switch these two routes for a /static handler?
+        method: 'GET', /
         path: '/client.js',
         handler: { file: './client.js' },
         config: {
@@ -35,7 +35,6 @@ server.register(require('inert'), (err) => {
         }
     }]);
 
-    // when server starts
     server.start(() => {
         console.info(`Server started at ${ server.info.uri }`);
     })
@@ -86,19 +85,21 @@ io.on('connection', function(socket){
     });
 
     var storeRumor = function (data) {
-    redisClient.incr('id:rumors', function(err, response){
-        // INCR id:rumors
-        // SET rumors:{id} 'data'
-        // SADD rumors {id}
+    // increment counter
+        redisClient.incr('id:rumors', function(err, response){
+            // INCR id:rumors
+            // SET rumors:{id} 'data'
+            // SADD rumors {id}
 
-        var key = 'rumors-' + response; // set key as rumor:1
-        var newData = { rumor: data, index: key };
+            var key = 'rumors-' + response; // set key as rumor:1
+            var newData = { rumor: data, index: key };
 
-        redisClient.set(key, data);
-        redisClient.sadd('rumors', key);
-        socket.emit('io:text', newData); // emit back to client side
-        console.log('adding rumor to redis ' + data + ' and index : ' + key);
-    }); // increment counter
+            redisClient.set(key, data);
+            redisClient.sadd('rumors', key);
+            socket.emit('io:text', newData); // emit back to client side
+            console.log('adding rumor to redis ' + data + ' and index : ' + key);
+
+        });
 
     }
 
@@ -113,9 +114,7 @@ io.on('connection', function(socket){
         redisClient.del(index);
         // delete id from 'rumors'
         redisClient.srem('rumors', index);
-
     }
 
 });
 
-// TODO : index out of range
