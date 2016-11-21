@@ -89,8 +89,8 @@ $( document ).ready(function() {
         var html = "<li class='row' id='" + data.index+ "'>";
         html += "<blockquote><p>" + data.rumor + "</p></blockquote>";
         html += "<div class='text-right'>";
-        html += "<i class='fa fa-pencil-square-o fa-2x' aria-hidden='true' data-index='" + data.index + "' data-rumor='" + data.rumor + "' data-toggle='modal' data-target='#modal-edit'></i>";
-        html += "<i class='fa fa-trash fa-2x' aria-hidden='true' data-index='" + data.index + "' data-rumor='" + data.rumor + "' data-toggle='modal' data-target='#modal-delete'></i>";
+        html += "<button class='fa fa-pencil-square-o fa-2x' aria-hidden='true' data-index='" + data.index + "' data-rumor='" + data.rumor + "' data-toggle='modal' data-target='#modal-edit'></button>";
+        html += "<button class='fa fa-trash fa-2x' aria-hidden='true' data-index='" + data.index + "' data-rumor='" + data.rumor + "' data-toggle='modal' data-target='#modal-delete'></button>";
         html += "</div>";
         html += "</li>";
         $('#rumors').append(html);  // append to list
