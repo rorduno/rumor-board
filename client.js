@@ -85,15 +85,40 @@ $( document ).ready(function() {
    * renders messages to the DOM
    * nothing fancy
    */
-    function renderMessage(data) {
-        var html = "<li class='row' id='" + data.index+ "'>";
-        html += "<blockquote><p>" + data.rumor + "</p></blockquote>";
+    function renderMessage(newData) {
+        var data = removeTags(newData.rumor);
+        var html = "<li class='row' id='" + newData.index+ "'>";
+        html += "<blockquote><p>" + data + "</p></blockquote>";
         html += "<div class='text-right'>";
-        html += "<button class='fa fa-pencil-square-o fa-2x' aria-hidden='true' data-index='" + data.index + "' data-rumor='" + data.rumor + "' data-toggle='modal' data-target='#modal-edit'></button>";
-        html += "<button class='fa fa-trash fa-2x' aria-hidden='true' data-index='" + data.index + "' data-rumor='" + data.rumor + "' data-toggle='modal' data-target='#modal-delete'></button>";
+        html += "<button class='fa fa-pencil-square-o fa-2x' aria-hidden='true' data-index='" + newData.index + "' data-rumor='" + data + "' data-toggle='modal' data-target='#modal-edit'></button>";
+        html += "<button class='fa fa-trash fa-2x' aria-hidden='true' data-index='" + newData.index + "' data-rumor='" + data + "' data-toggle='modal' data-target='#modal-delete'></button>";
         html += "</div>";
         html += "</li>";
         $('#rumors').append(html);  // append to list
     return;
   }
+
+    var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
+
+    var tagOrComment = new RegExp(
+        '<(?:'
+        // Comment body.
+        + '!--(?:(?:-*[^->])*--+|-?)'
+        // Special "raw text" elements whose content should be elided.
+        + '|script\\b' + tagBody + '>[\\s\\S]*?</script\\s*'
+        + '|style\\b' + tagBody + '>[\\s\\S]*?</style\\s*'
+        // Regular name
+        + '|/?[a-z]'
+        + tagBody
+        + ')>',
+        'gi');
+
+    function removeTags(html) {
+      var oldHtml;
+      do {
+        oldHtml = html;
+        html = html.replace(tagOrComment, '');
+      } while (html !== oldHtml);
+      return html.replace(/</g, '&lt;');
+    }
 });

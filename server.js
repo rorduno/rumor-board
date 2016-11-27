@@ -1,12 +1,13 @@
 var Hapi = require('hapi');
 var server = new Hapi.Server();
-var port = process.env.PORT || 3000;
+var port = process.env.PORT || 3333;
 server.connection({ port: port });
 
 var redis = require('redis');
-var redisClient; //= redis.createClient();
+var redisClient;
 var io = require('socket.io')(server.listener);
-var rumors = [];
+var sanitizer = require('sanitizer');
+
 
 if (process.env.REDISTOGO_URL) {
     var rtg   = require("url").parse(process.env.REDISTOGO_URL);
@@ -14,7 +15,7 @@ if (process.env.REDISTOGO_URL) {
 
     redisClient.auth(rtg.auth.split(":")[1]);
 } else {
-    var redis = require("redis").createClient();
+    var redisClient = require("redis").createClient();
 }
 
 server.register(require('inert'), (err) => {
@@ -100,22 +101,24 @@ io.on('connection', function(socket){
             // INCR id:rumors
             // SET rumors:{id} 'data'
             // SADD rumors {id}
-
             var key = 'rumors-' + response; // set key as rumor:1
-            var newData = { rumor: data, index: key };
+            var cleanData = sanitizer.escape(data); // Escapes HTML special characters in attribute values as HTML entities
+            var newData = { rumor: cleanData, index: key };
 
-            redisClient.set(key, data);
+            redisClient.set(key, cleanData);
             redisClient.sadd('rumors', key);
             socket.emit('io:text', newData); // emit back to client side
-            console.log('adding rumor to redis ' + data + ' and index : ' + key);
+            console.log('adding rumor to redis ' + cleanData + ' and index : ' + key);
 
         });
 
     }
 
     var editRumor = function (newData) {
-        console.log('editing newData...' + newData.index + newData.rumor);
-        redisClient.set(newData.index, newData.rumor);
+        var cleanData = sanitizer.escape(newData.rumor); // Escapes HTML special characters in attribute values as HTML entities
+        console.log('editing newData...' + newData.index + cleanData);
+
+        redisClient.set(newData.index, cleanData);
     }
 
     var removeRumor = function (index) {
