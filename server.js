@@ -44,7 +44,18 @@ server.register(require('inert'), (err) => {
                 failAction: 'ignore' // may also be 'ignore' or 'log'
             }
         }
-    }]);
+    }, {
+        method: 'GET',
+        path: '/favicon.ico',
+        handler: {
+            file: 'favicon.ico'
+        }, config: {
+                state: {
+                    parse: false, // parse and store in request.state
+                    failAction: 'ignore' // may also be 'ignore' or 'log'
+                }
+        }
+       }]);
 
     server.start(() => {
         console.info(`Server started at ${ server.info.uri }`);
