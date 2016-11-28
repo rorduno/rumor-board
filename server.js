@@ -64,10 +64,8 @@ server.register(require('inert'), (err) => {
 
 // set listener for 'connection', all socket io is done here
 io.on('connection', function(socket){
-    console.log('a user connected') ;
     // loads persisted rumors back to client
     socket.on('io:load-rumors', function () {
-        console.log('io:load-rumors');
         // loop through 'rumors' and get ids
         redisClient.smembers('rumors', function(err,data){
             var rumorIds = data;
@@ -85,25 +83,22 @@ io.on('connection', function(socket){
 
     // listener for text input from client
     socket.on('io:text', function (text) {
-        console.log('io:text server side');
         // persist data in database
         storeRumor(text);
     });
 
     // listener for deleting rumor
     socket.on('io:delete-rumor', function (index) {
-        console.log('io:delete-rumor server side');
         removeRumor(index);
     });
 
     // listener for editing rumor
     socket.on('io:edit-rumor', function (newData) {
-        console.log('io:edit-rumor server side');
         editRumor(newData);
     });
 
     socket.on('disconnect', function(){
-        console.log('user disconnected');
+        console.info('user disconnected');
     });
 
     var storeRumor = function (data) {
@@ -119,25 +114,19 @@ io.on('connection', function(socket){
             redisClient.set(key, cleanData);
             redisClient.sadd('rumors', key);
             socket.emit('io:text', newData); // emit back to client side
-            console.log('adding rumor to redis ' + cleanData + ' and index : ' + key);
-
         });
 
     }
 
     var editRumor = function (newData) {
         var cleanData = sanitizer.escape(newData.rumor); // Escapes HTML special characters in attribute values as HTML entities
-        console.log('editing newData...' + newData.index + cleanData);
-
         redisClient.set(newData.index, cleanData);
     }
 
     var removeRumor = function (index) {
-       console.log('deleting...' + index);
         // delete data from set
         redisClient.del(index);
         // delete id from 'rumors'
-        redisClient.srem('rumors', index);
     }
 
 });

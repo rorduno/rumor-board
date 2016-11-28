@@ -11,7 +11,6 @@ $( document ).ready(function() {
 
     // listens for text i/o
     socket.on('io:text', function(data){
-      console.log('connection in client side' + data);
       renderMessage(data);
     });
 
@@ -25,7 +24,6 @@ $( document ).ready(function() {
         }
 
         var msg  = $('#m').val();
-        console.log('submitting text : ' + msg);
         // client to server, emits text input back to server
         socket.emit('io:text', msg);
         $('#m').val(''); // clear message form ready for next/new message
@@ -54,7 +52,6 @@ $( document ).ready(function() {
         }
 
         var msg  = $('#n').val();
-        console.log('submitting text : ' + msg);
         var newData = document.getElementById('n').value;
         var index = document.getElementById('n').dataset.index;
         socket.emit('io:edit-rumor' , { index: index, rumor: newData });
@@ -72,7 +69,6 @@ $( document ).ready(function() {
         e.preventDefault();
         // delete rumors
         var index = document.getElementById('modal-delete-submit').dataset.index;
-        console.log('deleting index...' + index);
         socket.emit('io:delete-rumor', index);
 
         // update ui
